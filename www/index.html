@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MEMENTO — Make Your Existence Count</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Cinzel (Cinematic Serif), Inter (UI), JetBrains Mono (Telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Cinzel', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#070709',
+            charcoal: '#111116',
+            gold: {
+              DEFAULT: '#D4AF37',
+              soft: '#F3E5AB',
+              dim: 'rgba(212, 175, 55, 0.2)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #070709;
+      color: #E5E7EB;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.09) 0%, transparent 55%),
+        radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Subtle Glassmorphism Card */
+    .glass-panel {
+      background: rgba(17, 17, 22, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.78);
+    }
+
+    /* Animated Biometric Laser Line */
+    @keyframes scanLaser {
+      0% { top: 8%; opacity: 0.25; }
+      50% { top: 88%; opacity: 0.95; }
+      100% { top: 8%; opacity: 0.25; }
+    }
+
+    .laser-line {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #D4AF37, #FFF, #D4AF37, transparent);
+      box-shadow: 0 0 18px 2px rgba(212, 175, 55, 0.8);
+      animation: scanLaser 3.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* Camera Shutter Flash Effect */
+    @keyframes shutterFlash {
+      0% { opacity: 0.92; }
+      100% { opacity: 0; }
+    }
+    .flash-active {
+      animation: shutterFlash 0.45s ease-out forwards;
+    }
+
+    /* Subtle Gold Glow Pulse */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.15); }
+      50% { box-shadow: 0 0 28px rgba(212, 175, 55, 0.38); }
+    }
+    .gold-glow {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #070709; }
+    ::-webkit-scrollbar-thumb { background: #262630; border-radius: 3px; }
+  </style>
+</head>
+
+<body class="font-sans antialiased selection:bg-gold/30 selection:text-gold-soft flex flex-col justify-between min-h-screen">
+
+  <!-- CUSTOM TOAST NOTIFICATION CONTAINER (NO NATIVE ALERTS) -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- OPTIONAL API KEY MODAL -->
+  <div id="api-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="glass-panel rounded-2xl max-w-md w-full p-6 space-y-4 border border-gold/30">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="font-serif text-base text-white tracking-wider">GEMINI VISION API CONFIG</h3>
+        <button onclick="toggleApiModal(false)" class="text-zinc-400 hover:text-white text-sm font-mono">✕</button>
+      </div>
+      <p class="text-xs text-zinc-400 leading-relaxed">
+        MEMENTO uses the runtime Gemini API automatically. If you are running this outside Canvas or want to use your own Gemini API key for <code class="text-gold">gemini-2.5-flash</code> palm vision analysis, enter it below:
+      </p>
+      <input
+        type="password"
+        id="custom-api-key-input"
+        placeholder="AIzaSy... (Leave empty for default runtime)"
+        class="w-full bg-black/60 border border-white/15 focus:border-gold rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none"
+      />
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="toggleApiModal(false)" class="px-4 py-2 rounded-xl border border-white/10 text-xs font-mono text-zinc-400 hover:text-white">
+          CANCEL
+        </button>
+        <button onclick="saveCustomApiKey()" class="px-4 py-2 rounded-xl bg-gold text-black font-mono text-xs font-semibold hover:bg-gold-soft">
+          SAVE KEY
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP MINIMALIST NAVBAR -->
+  <header class="w-full py-4 px-5 md:px-12 flex items-center justify-between border-b border-white/5 sticky top-0 z-40 bg-obsidian/85 backdrop-blur-md">
+    <div class="flex items-center space-x-3">
+      <div class="w-2.5 h-2.5 rounded-full bg-gold animate-pulse"></div>
+      <span class="font-serif tracking-[0.35em] text-sm md:text-base text-white font-semibold">MEMENTO</span>
+    </div>
+
+    <div class="flex items-center space-x-3 md:space-x-5">
+      <div id="step-indicator" class="font-mono text-[11px] uppercase tracking-widest text-zinc-400">
+        PHASE 01 // INITIATION
+      </div>
+      <button
+        onclick="toggleApiModal(true)"
+        class="text-[11px] font-mono text-zinc-400 hover:text-gold border border-white/10 hover:border-gold/40 px-2.5 py-1 rounded-lg transition"
+        title="Configure Gemini API Key"
+      >
+        ⚙ API
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="flex-grow flex items-center justify-center px-4 py-6 md:py-10">
+
+    <!-- =================================================================
+         SCREEN 1: ONBOARDING (PERSONAL LIFE PROFILE)
+         ================================================================= -->
+    <section id="screen-onboarding" class="w-full max-w-lg transition-all duration-500">
+      <div class="text-center mb-7">
+        <p class="font-mono text-[11px] uppercase tracking-[0.3em] text-gold/80 mb-2">Existential Chronometer</p>
+        <h1 class="font-serif text-3xl md:text-4xl tracking-wider text-white mb-2.5">M E M E N T O</h1>
+        <p class="text-sm text-zinc-400 italic font-light">"Your time is limited. Make your existence count."</p>
+      </div>
+
+      <div class="glass-panel rounded-2xl p-6 md:p-8 space-y-6">
+        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+          <div>
+            <h2 class="text-base font-medium text-white tracking-wide">Personal Life Profile</h2>
+            <p class="text-xs text-zinc-400 mt-0.5">Anchor your temporal origin before scanning your palms.</p>
+          </div>
+          <button
+            type="button"
+            onclick="fillDemoProfile()"
+            class="text-[10px] font-mono text-gold hover:text-gold-soft border border-gold/30 hover:border-gold px-2.5 py-1 rounded-lg transition shrink-0"
+          >
+            ⚡ QUICK FILL
+          </button>
+        </div>
+
+        <form id="onboarding-form" class="space-y-5" onsubmit="handleOnboardingSubmit(event)">
+          <!-- Full Name (Optional) -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label for="user-name" class="text-xs uppercase tracking-wider text-zinc-400 font-mono">Full Name</label>
+              <span class="text-[10px] font-mono text-zinc-500">OPTIONAL</span>
+            </div>
+            <input
+              type="text"
+              id="user-name"
+              placeholder="e.g., Aarav Sharma"
+              class="w-full bg-black/50 border border-white/10 focus:border-gold/70 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition"
+            />
+          </div>
+
+          <!-- Date of Birth & Exact Birth Time -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="user-dob" class="text-xs uppercase tracking-wider text-zinc-400 font-mono">Date of Birth</label>
+                <span class="text-[10px] font-mono text-gold/80">REQUIRED</span>
+              </div>
+              <input
+                type="date"
+                id="user-dob"
+                required
+                value="2004-08-15"
+                class="w-full bg-black/50 border border-white/10 focus:border-gold/70 rounded-xl px-4 py-3 text-sm text-white outline-none transition [color-scheme:dark]"
+              />
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="user-tob" class="text-xs uppercase tracking-wider text-zinc-400 font-mono">Birth Time</label>
+                <span class="text-[10px] font-mono text-zinc-500">OPTIONAL</span>
+              </div>
+              <input
+                type="time"
+                id="user-tob"
+                value="06:30"
+                class="w-full bg-black/50 border border-white/10 focus:border-gold/70 rounded-xl px-4 py-3 text-sm text-white outline-none transition [color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          <!-- Preferred Time Zone -->
+          <div>
+            <label for="user-tz" class="block text-xs uppercase tracking-wider text-zinc-400 font-mono mb-1.5">
+              Preferred Time Zone
+            </label>
+            <select
+              id="user-tz"
+              class="w-full bg-black/50 border border-white/10 focus:border-gold/70 rounded-xl px-4 py-3 text-sm text-white outline-none transition"
+            >
+              <option value="Asia/Kolkata">Asia/Kolkata (IST — UTC+05:30)</option>
+              <option value="UTC">Universal Coordinated Time (UTC)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="Europe/London">Europe/London (GMT/BST)</option>
+              <option value="Asia/Tokyo">Asia/Tokyo (JST — UTC+09:00)</option>
+              <option value="Asia/Dubai">Asia/Dubai (GST — UTC+04:00)</option>
+            </select>
+          </div>
+
+          <!-- Error Notice -->
+          <p id="onboarding-error" class="hidden text-xs text-red-400 font-mono bg-red-950/40 border border-red-500/30 rounded-lg px-3 py-2"></p>
+
+          <!-- Scan Destiny CTA Button -->
+          <button
+            type="submit"
+            class="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/20 via-gold/30 to-amber-500/20 border border-gold/60 hover:border-gold py-3.5 px-6 transition duration-300 gold-glow"
+          >
+            <div class="flex items-center justify-center space-x-3">
+              <svg class="w-5 h-5 text-gold transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+              </svg>
+              <span class="font-serif tracking-[0.2em] text-sm font-semibold text-white">SCAN DESTINY</span>
+            </div>
+          </button>
+        </form>
+
+        <!-- Disclaimer -->
+        <p class="text-[11px] text-zinc-500 text-center leading-relaxed pt-2 border-t border-white/5">
+          Disclaimer: Lifespan estimation is a symbolic Samudrik Shastra palmistry reflection for mindfulness and gamified life-tracking—not a medical or factual prediction of death.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- =================================================================
+         SCREEN 2: DUAL-PALM SCANNER & GEMINI VISION ANALYSIS
+         ================================================================= -->
+    <section id="screen-scanner" class="hidden w-full max-w-2xl transition-all duration-500">
+      <div class="glass-panel rounded-2xl p-5 md:p-8 space-y-6 relative overflow-hidden">
+
+        <!-- AI Analysis Loading Overlay (Shown when calling Gemini Vision API) -->
+        <div id="ai-loading-overlay" class="hidden absolute inset-0 z-40 bg-obsidian/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center space-y-5">
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-2 border-gold/20 border-t-gold animate-spin"></div>
+            <div class="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center text-gold font-serif text-sm">
+              ॐ
+            </div>
+          </div>
+          <div class="space-y-2 max-w-md">
+            <p class="font-mono text-[11px] uppercase tracking-[0.3em] text-gold">SAMUDRIK SHASTRA VISION ENGINE</p>
+            <h3 id="ai-loading-title" class="font-serif text-xl text-white tracking-wider">Mapping Jeevan Rekha & Shukra Parvat...</h3>
+            <p id="ai-loading-step" class="text-xs text-zinc-400 font-mono">
+              Comparing Left Palm (Birth Potential) vs. Right Palm (Active Karma) via Gemini Vision...
+            </p>
+          </div>
+        </div>
+
+        <!-- Scanner Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="scan-badge" class="px-2 py-0.5 text-[10px] font-mono uppercase bg-gold/20 text-gold border border-gold/40 rounded">
+                STEP 1 OF 2
+              </span>
+              <h2 id="scan-title" class="font-serif text-lg md:text-xl text-white tracking-wider">
+                PLACE LEFT PALM IN FRAME
+              </h2>
+            </div>
+            <p id="scan-subtitle" class="text-xs text-zinc-400 mt-1">
+              Align your Jeevan Rekha (Life Line) and Shukra Parvat (Venus Mount) inside the golden guide.
+            </p>
+          </div>
+
+          <button
+            onclick="returnToOnboarding()"
+            class="self-start sm:self-auto text-xs font-mono text-zinc-400 hover:text-white border border-white/10 px-3 py-1.5 rounded-lg transition"
+          >
+            ← PROFILE
+          </button>
+        </div>
+
+        <!-- Camera / Simulated Viewfinder Container -->
+        <div class="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-white/15 shadow-inner">
+          <!-- Live HTML5 Video Element -->
+          <video
+            id="camera-video"
+            autoplay
+            playsinline
+            muted
+            class="w-full h-full object-cover"
+          ></video>
+
+          <!-- Live Simulated Biometric Canvas (Shown automatically if camera is blocked/unavailable) -->
+          <canvas
+            id="sim-viewfinder-canvas"
+            class="hidden absolute inset-0 w-full h-full object-cover z-0"
+          ></canvas>
+
+          <!-- Shutter Flash Overlay -->
+          <div id="camera-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0 z-30"></div>
+
+          <!-- Animated Scanning Laser -->
+          <div id="laser-beam" class="laser-line z-20"></div>
+
+          <!-- Corner HUD Brackets -->
+          <div class="pointer-events-none absolute inset-4 z-20">
+            <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-gold/80"></div>
+            <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-gold/80"></div>
+            <div class="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-gold/80"></div>
+            <div class="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-gold/80"></div>
+          </div>
+
+          <!-- SVG Palm & Jeevan Rekha Alignment Overlay -->
+          <div class="pointer-events-none absolute inset-0 flex items-center justify-center z-10 p-4">
+            <svg
+              id="palm-svg-guide"
+              viewBox="0 0 240 280"
+              class="w-52 h-60 md:w-64 md:h-72 text-gold/80 transition-transform duration-500"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <!-- Outer Palm Silhouette -->
+              <path
+                d="M75 255 V165 L42 135 C34 127 42 114 53 120 L75 138 V68 C75 58 90 58 90 68 V115 M90 65 V42 C90 32 106 32 106 42 V112 M106 45 V35 C106 25 122 25 122 35 V112 M122 52 V55 C122 45 138 45 138 55 V120 M138 78 C138 68 152 70 152 80 V185 C152 225 130 255 100 255 Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-dasharray="5 3"
+              />
+              <!-- Highlighted Jeevan Rekha (Life Line Arc) -->
+              <path
+                d="M78 132 Q118 155 112 238"
+                stroke="#D4AF37"
+                stroke-width="3.2"
+                stroke-linecap="round"
+              />
+              <!-- Parallel Mangal Rekha (Sister Line) -->
+              <path
+                d="M74 144 Q105 162 100 222"
+                stroke="#F3E5AB"
+                stroke-width="1.5"
+                stroke-dasharray="3 3"
+                stroke-linecap="round"
+              />
+              <!-- Heart & Head Reference Lines -->
+              <path d="M77 125 Q115 132 145 122" stroke="currentColor" stroke-width="1.3" stroke-opacity="0.6" />
+              <path d="M148 108 Q112 115 88 98" stroke="currentColor" stroke-width="1.3" stroke-opacity="0.6" />
+              <!-- Wrist Manibandha Bracelets -->
+              <line x1="78" y1="252" x2="128" y2="252" stroke="#D4AF37" stroke-width="1.6" stroke-opacity="0.75" />
+              <line x1="80" y1="258" x2="126" y2="258" stroke="#D4AF37" stroke-width="1.6" stroke-opacity="0.55" />
+            </svg>
+          </div>
+
+          <!-- Live Biometric Telemetry HUD -->
+          <div class="pointer-events-none absolute bottom-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 text-[10px] md:text-[11px] font-mono text-gold/90 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 z-20">
+            <span id="hud-hand-label">TARGET: LEFT_PALM (BIRTH POTENTIAL)</span>
+            <span id="hud-status">BIOMETRIC SENSOR: READY</span>
+          </div>
+        </div>
+
+        <!-- Captured Palm Thumbnails + Action Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <!-- Left Palm Slot (4 cols) -->
+          <div class="md:col-span-4 flex items-center space-x-3 bg-black/45 border border-white/10 rounded-xl p-2.5">
+            <div class="w-12 h-12 rounded-lg bg-zinc-900 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+              <img id="thumb-left" class="hidden w-full h-full object-cover" alt="Left Palm" />
+              <span id="thumb-left-placeholder" class="text-xs font-mono text-zinc-500">L</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-white truncate">Left Palm</p>
+              <p id="status-left" class="text-[11px] font-mono text-amber-400">Step 1: Ready</p>
+            </div>
+          </div>
+
+          <!-- Right Palm Slot (4 cols) -->
+          <div class="md:col-span-4 flex items-center space-x-3 bg-black/45 border border-white/10 rounded-xl p-2.5">
+            <div class="w-12 h-12 rounded-lg bg-zinc-900 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+              <img id="thumb-right" class="hidden w-full h-full object-cover" alt="Right Palm" />
+              <span id="thumb-right-placeholder" class="text-xs font-mono text-zinc-500">R</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-white truncate">Right Palm</p>
+              <p id="status-right" class="text-[11px] font-mono text-zinc-500">Step 2: Waiting</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons (4 cols) -->
+          <div class="md:col-span-4 flex flex-col space-y-2">
+            <button
+              id="btn-capture-palm"
+              onclick="captureCurrentPalm()"
+              class="w-full py-3 px-4 rounded-xl bg-gold text-black font-serif font-bold text-xs tracking-[0.15em] uppercase hover:bg-gold-soft transition shadow-lg shadow-gold/15"
+            >
+              SCAN LEFT PALM
+            </button>
+
+            <div class="grid grid-cols-2 gap-1.5">
+              <label class="text-center cursor-pointer text-[10px] font-mono text-zinc-300 hover:text-white py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">
+                UPLOAD PHOTO
+                <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+              </label>
+              <button
+                type="button"
+                onclick="resetPalmScans()"
+                class="text-[10px] font-mono text-zinc-400 hover:text-red-400 py-1.5 bg-white/5 border border-white/10 rounded-lg transition"
+              >
+                RESET SCANS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="capture-canvas" class="hidden"></canvas>
+      </div>
+    </section>
+
+
+    <!-- =================================================================
+         SCREEN 3: MAIN MEMENTO DASHBOARD
+         ================================================================= -->
+    <section id="screen-dashboard" class="hidden w-full max-w-6xl space-y-8 transition-all duration-500">
+
+      <!-- 1. SAMUDRIK PALM READING SUMMARY BANNER -->
+      <div class="glass-panel rounded-2xl p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-l-4 border-l-gold">
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-widest bg-gold/20 text-gold border border-gold/40 rounded">
+              SAMUDRIK HORIZON: <span id="dash-lifespan-years">74</span> YEARS
+            </span>
+            <span id="dash-source-badge" class="px-2.5 py-0.5 text-[10px] font-mono uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 rounded">
+              GEMINI VISION VERIFIED
+            </span>
+            <span id="dash-tz-badge" class="text-[11px] font-mono text-zinc-500">Asia/Kolkata</span>
+          </div>
+
+          <h1 class="font-serif text-2xl md:text-3xl text-white tracking-wider">
+            <span id="dash-user-name">Traveller</span>'s Temporal Ledger
+          </h1>
+
+          <p id="dash-reading-summary" class="text-xs md:text-sm text-zinc-300 leading-relaxed max-w-3xl">
+            Dual-palm alignment calibrated. Wide Shukra Parvat arc and steady Jeevan Rekha proportion locked.
+          </p>
+        </div>
+
+        <!-- Captured Palm Mini-Preview + Actions -->
+        <div class="flex items-center space-x-3 self-start lg:self-center shrink-0">
+          <div class="flex -space-x-2">
+            <img id="dash-palm-left" class="w-10 h-10 rounded-full object-cover border-2 border-gold/60 bg-black" alt="Left Palm" />
+            <img id="dash-palm-right" class="w-10 h-10 rounded-full object-cover border-2 border-gold/60 bg-black" alt="Right Palm" />
+          </div>
+          <button
+            onclick="reopenScanner()"
+            class="text-xs font-mono text-zinc-300 hover:text-gold border border-white/10 hover:border-gold/50 px-3.5 py-2 rounded-xl transition"
+          >
+            ↻ RESCAN PALMS
+          </button>
+          <button
+            onclick="returnToOnboardingFromDash()"
+            class="text-xs font-mono text-zinc-400 hover:text-white border border-white/10 px-3 py-2 rounded-xl transition"
+          >
+            EDIT DOB
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. HERO LIVE COUNTDOWN & SLEEK LIFESPAN PROGRESS BAR -->
+      <div class="glass-panel rounded-2xl p-6 md:p-10 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-2">
+          <div>
+            <p class="font-mono text-[11px] uppercase tracking-[0.25em] text-gold">Estimated Time Remaining</p>
+            <p class="text-xs text-zinc-400 mt-0.5">"Your time is limited. Make your existence count."</p>
+          </div>
+          <div class="text-left md:text-right font-mono text-xs text-zinc-400">
+            CURRENT EXACT AGE: <span id="stat-exact-age" class="text-white font-semibold">—</span>
+          </div>
+        </div>
+
+        <!-- Live Ticking Countdown Grid (Days, Hours, Minutes, Seconds) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-5 my-6">
+          <div class="bg-black/60 border border-white/10 rounded-xl p-4 md:p-6 text-center">
+            <div id="cd-days" class="font-mono text-3xl md:text-5xl font-semibold text-white tracking-tight">00,000</div>
+            <div class="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-2">Days</div>
+          </div>
+          <div class="bg-black/60 border border-white/10 rounded-xl p-4 md:p-6 text-center">
+            <div id="cd-hours" class="font-mono text-3xl md:text-5xl font-semibold text-white tracking-tight">00</div>
+            <div class="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-2">Hours</div>
+          </div>
+          <div class="bg-black/60 border border-white/10 rounded-xl p-4 md:p-6 text-center">
+            <div id="cd-minutes" class="font-mono text-3xl md:text-5xl font-semibold text-white tracking-tight">00</div>
+            <div class="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-2">Minutes</div>
+          </div>
+          <div class="bg-black/60 border border-gold/40 rounded-xl p-4 md:p-6 text-center relative overflow-hidden gold-glow">
+            <div id="cd-seconds" class="font-mono text-3xl md:text-5xl font-semibold text-gold tracking-tight">00</div>
+            <div class="font-mono text-[10px] uppercase tracking-[0.25em] text-gold/80 mt-2">Seconds</div>
+          </div>
+        </div>
+
+        <!-- Sleek Lifespan Progress Bar with Samudrik Milestones -->
+        <div class="space-y-2.5 pt-2">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="text-zinc-300">
+              LIFE ELAPSED: <strong id="stat-pct-elapsed" class="text-gold">0.0000%</strong>
+            </span>
+            <span class="text-zinc-400">
+              REMAINING: <strong id="stat-pct-remaining" class="text-white">100.0000%</strong>
+            </span>
+          </div>
+
+          <div class="w-full h-3.5 bg-black/80 rounded-full overflow-hidden border border-white/10 p-0.5">
+            <div
+              id="lifespan-progress-bar"
+              class="h-full rounded-full bg-gradient-to-r from-amber-600 via-gold to-gold-soft transition-all duration-700 relative"
+              style="width: 25%;"
+            ></div>
+          </div>
+
+          <!-- Classical Jeevan Rekha Milestone Markers -->
+          <div class="flex justify-between text-[10px] font-mono text-zinc-600 pt-1">
+            <span>BIRTH (0y)</span>
+            <span>GURU MOUNT (~20y)</span>
+            <span>SHANI PEAK (~35y)</span>
+            <span>PALM MIDPOINT (~50y)</span>
+            <span id="milestone-horizon-label">MANIBANDHA (74y)</span>
+          </div>
+        </div>
+
+        <!-- 4 Telemetry Metric Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
+          <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+            <p class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Total Days Lived</p>
+            <p id="stat-days-lived" class="font-mono text-xl md:text-2xl text-white font-semibold mt-1">0</p>
+            <p class="text-[11px] text-zinc-500 mt-0.5">Days experienced on Earth</p>
+          </div>
+
+          <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+            <p class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Estimated Days Remaining</p>
+            <p id="stat-days-remaining" class="font-mono text-xl md:text-2xl text-gold font-semibold mt-1">0</p>
+            <p class="text-[11px] text-zinc-500 mt-0.5">Days left to build & explore</p>
+          </div>
+
+          <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+            <p class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Temporal Origin</p>
+            <p id="stat-origin-date" class="font-mono text-base md:text-lg text-white font-medium mt-1">—</p>
+            <p class="text-[11px] text-zinc-500 mt-0.5">Recorded Date of Birth</p>
+          </div>
+
+          <div class="bg-black/40 border border-white/5 rounded-xl p-4">
+            <p class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Estimated Horizon Year</p>
+            <p id="stat-horizon-year" class="font-mono text-xl md:text-2xl text-white font-semibold mt-1">—</p>
+            <p class="text-[11px] text-zinc-500 mt-0.5">Symbolic Samudrik milestone</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. MEMORY VAULT & BUCKET LIST (TWO-COLUMN WORKSPACE) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- ==========================================
+             LEFT COLUMN (7 COLS): MEMORY VAULT
+             ========================================== -->
+        <div class="lg:col-span-7 glass-panel rounded-2xl p-6 md:p-8 flex flex-col justify-between space-y-6">
+          <div>
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <h2 class="font-serif text-lg md:text-xl text-white tracking-wider">MEMORY VAULT</h2>
+                <p class="text-xs text-zinc-400 mt-0.5">Preserve photographs, voice notes, and defining moments.</p>
+              </div>
+              <span id="memory-count-badge" class="px-2.5 py-1 text-[10px] font-mono bg-white/5 text-zinc-300 rounded-md border border-white/10">
+                1 ARTIFACT
+              </span>
+            </div>
+
+            <!-- Add Memory Creator Box -->
+            <form id="memory-form" onsubmit="handleAddMemory(event)" class="mt-5 bg-black/40 border border-white/10 rounded-xl p-4 space-y-4">
+              <div>
+                <input
+                  type="text"
+                  id="memory-title"
+                  required
+                  placeholder="Title this moment (e.g., Late-night coding breakthrough, Mountain sunrise)..."
+                  class="w-full bg-black/60 border border-white/10 focus:border-gold/70 rounded-lg px-3.5 py-2.5 text-xs md:text-sm text-white placeholder-zinc-500 outline-none transition"
+                />
+              </div>
+
+              <textarea
+                id="memory-note"
+                rows="2"
+                placeholder="Write the story, lesson, or feeling behind this memory..."
+                class="w-full bg-black/60 border border-white/10 focus:border-gold/70 rounded-lg px-3.5 py-2 text-xs md:text-sm text-white placeholder-zinc-500 outline-none transition resize-none"
+              ></textarea>
+
+              <!-- Media Attachments Bar (Photo + Voice Note Recorder) -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Photo Upload Trigger -->
+                  <label class="cursor-pointer inline-flex items-center space-x-2 text-xs font-mono bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 px-3 py-2 rounded-lg transition">
+                    <svg class="w-4 h-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span id="photo-label-text">ADD PHOTO</span>
+                    <input type="file" id="memory-photo-input" accept="image/*" class="hidden" onchange="previewSelectedPhoto(event)" />
+                  </label>
+
+                  <!-- Live Voice Note Recorder Button -->
+                  <button
+                    type="button"
+                    id="btn-record-audio"
+                    onclick="toggleVoiceRecording()"
+                    class="inline-flex items-center space-x-2 text-xs font-mono bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 px-3 py-2 rounded-lg transition"
+                  >
+                    <span id="record-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span id="record-btn-text">RECORD VOICE NOTE</span>
+                  </button>
+                </div>
+
+                <!-- Save Artifact Submit -->
+                <button
+                  type="submit"
+                  class="px-4 py-2 rounded-lg bg-gold text-black font-serif font-bold text-xs tracking-wider uppercase hover:bg-gold-soft transition"
+                >
+                  SEAL IN VAULT
+                </button>
+              </div>
+
+              <!-- Attachment Status Previews -->
+              <div id="attachment-status" class="hidden text-[11px] font-mono text-emerald-400 pt-1"></div>
+            </form>
+
+            <!-- Memory Vault Gallery Feed -->
+            <div id="memory-vault-list" class="mt-6 space-y-4 max-h-[420px] overflow-y-auto pr-1">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             RIGHT COLUMN (5 COLS): BUCKET LIST
+             ========================================== -->
+        <div class="lg:col-span-5 glass-panel rounded-2xl p-6 md:p-8 flex flex-col justify-between space-y-6">
+          <div>
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <h2 class="font-serif text-lg md:text-xl text-white tracking-wider">BUCKET LIST</h2>
+                <p class="text-xs text-zinc-400 mt-0.5">Experiences to claim before your timer reaches zero.</p>
+              </div>
+              <span id="bucket-progress-badge" class="px-2.5 py-1 text-[10px] font-mono bg-gold/15 text-gold border border-gold/30 rounded-md">
+                1 / 4 FULFILLED
+              </span>
+            </div>
+
+            <!-- Mini Bucket List Progress Bar -->
+            <div class="w-full h-1.5 bg-black/60 rounded-full overflow-hidden mt-4">
+              <div id="bucket-mini-bar" class="h-full bg-gold transition-all duration-500" style="width: 25%;"></div>
+            </div>
+
+            <!-- Add Bucket Item Form -->
+            <form onsubmit="handleAddBucketItem(event)" class="mt-5 flex gap-2">
+              <input
+                type="text"
+                id="bucket-input"
+                required
+                placeholder="Add a life goal (e.g., Skydiving, Build an AI startup)..."
+                class="flex-grow bg-black/50 border border-white/10 focus:border-gold/70 rounded-xl px-3.5 py-2.5 text-xs md:text-sm text-white placeholder-zinc-500 outline-none transition"
+              />
+              <button
+                type="submit"
+                class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-gold hover:text-black text-white font-mono text-xs font-medium transition shrink-0"
+              >
+                + ADD
+              </button>
+            </form>
+
+            <!-- Interactive Checklist Items -->
+            <div id="bucket-list-container" class="mt-5 space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <p class="text-[11px] font-mono text-zinc-500 text-center border-t border-white/5 pt-4">
+            EVERY CHECKMARK IS A VICTORY AGAINST ENTROPY.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full py-4 px-6 text-center border-t border-white/5 text-[11px] font-mono text-zinc-600">
+    MEMENTO CHRONO-SYSTEM // SAMUDRIK SHASTRA &amp; GEMINI VISION ENGINE
+  </footer>
+
+  <!-- =================================================================
+       APPLICATION STATE, GEMINI VISION API & JAVASCRIPT LOGIC
+       ================================================================= -->
+  <script>
+    // Runtime Gemini API key (automatically injected by Canvas environment; user can also override via modal)
+    const apiKey = "";
+    let userCustomApiKey = "";
+
+    // Exact System Instruction requested for Samudrik Shastra Palmistry Analysis
+    const SAMUDRIK_SYSTEM_PROMPT = "You are an expert in traditional Hindu Palmistry. Analyze Image 1 (Left Hand) and Image 2 (Right Hand). Measure the Jeevan Rekha (Life Line) curve, the arc of Shukra Parvat (Venus Mount), and check for a Mangal Rekha (Sister Line). Return a raw JSON with estimated_lifespan (between 65 and 92) and a short reading_summary.";
+
+    // Global Application State
+    const mementoState = {
+      profile: {
+        fullName: 'Traveller',
+        dob: '2004-08-15',
+        birthTime: '06:30',
+        timeZone: 'Asia/Kolkata'
+      },
+      scanner: {
+        currentHand: 'LEFT', // 'LEFT' | 'RIGHT' | 'COMPLETE'
+        leftPalmBase64: null,
+        rightPalmBase64: null,
+        stream: null,
+        usingSimulation: false,
+        simAnimationId: null
+      },
+      destiny: {
+        estimatedLifespan: 74,
+        readingSummary: 'Dual-palm alignment calibrated. Wide Shukra Parvat arc and steady Jeevan Rekha proportion locked at 74 years.',
+        source: 'SAMUDRIK ENGINE'
+      },
+      countdownInterval: null,
+      memories: [
+        {
+          id: 1,
+          title: 'Initiated MEMENTO Existential Ledger',
+          note: 'Anchored my timeline and resolved to make every remaining day count with clarity and purpose.',
+          date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          photoUrl: null,
+          audioUrl: null
+        }
+      ],
+      bucketList: [
+        { id: 1, title: 'Launch MEMENTO with Dual-Palm AI Vision Scanner', completed: true },
+        { id: 2, title: 'Achieve top rank and make my family proud', completed: false },
+        { id: 3, title: 'Take parents on an unforgettable international journey', completed: false },
+        { id: 4, title: 'Witness the Northern Lights under a clear arctic sky', completed: false }
+      ],
+      mediaStaging: {
+        photoDataUrl: null,
+        audioDataUrl: null,
+        mediaRecorder: null,
+        audioChunks: [],
+        isRecording: false
+      }
+    };
+
+    // Load saved data from localStorage on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const tzSelect = document.getElementById('user-tz');
+        if ([...tzSelect.options].some(opt => opt.value === detectedTz)) {
+          tzSelect.value = detectedTz;
+        }
+
+        const savedMemories = localStorage.getItem('memento_memories_v1');
+        if (savedMemories) mementoState.memories = JSON.parse(savedMemories);
+
+        const savedBucket = localStorage.getItem('memento_bucket_v1');
+        if (savedBucket) mementoState.bucketList = JSON.parse(savedBucket);
+      } catch (e) {}
+    });
+
+    function persistStorage() {
+      try {
+        localStorage.setItem('memento_memories_v1', JSON.stringify(mementoState.memories));
+        localStorage.setItem('memento_bucket_v1', JSON.stringify(mementoState.bucketList));
+      } catch (e) {}
+    }
+
+    // Custom Non-Blocking Toast Notification (Replaces alert())
+    function showToast(message, type = 'gold') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const borderColor = type === 'error' ? 'border-red-500/50 text-red-200' : 'border-gold/50 text-zinc-100';
+      toast.className = `glass-panel ${borderColor} border px-4 py-3 rounded-xl text-xs font-mono shadow-2xl transition-all duration-300 pointer-events-auto flex items-center justify-between gap-3`;
+      toast.innerHTML = `
+        <span>${escapeHtml(message)}</span>
+        <button onclick="this.parentElement.remove()" class="text-zinc-400 hover:text-white">✕</button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (toast.parentElement) toast.remove();
+      }, 4200);
+    }
+
+    // Optional API Key Modal Controls
+    function toggleApiModal(show) {
+      const modal = document.getElementById('api-modal');
+      if (show) {
+        modal.classList.remove('hidden');
+        document.getElementById('custom-api-key-input').value = userCustomApiKey;
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function saveCustomApiKey() {
+      userCustomApiKey = document.getElementById('custom-api-key-input').value.trim();
+      toggleApiModal(false);
+      showToast(userCustomApiKey ? 'Custom Gemini API key saved for session.' : 'Using default runtime Gemini environment.');
+    }
+
+    function fillDemoProfile() {
+      document.getElementById('user-name').value = 'Pushkar';
+      document.getElementById('user-dob').value = '2005-03-21';
+      document.getElementById('user-tob').value = '08:15';
+      showToast('Demo profile populated. Click SCAN DESTINY to continue.');
+    }
+
+    // =================================================================
+    // SCREEN 1 -> SCREEN 2 (ONBOARDING TO DUAL-PALM SCANNER)
+    // =================================================================
+    function handleOnboardingSubmit(event) {
+      event.preventDefault();
+      const dobInput = document.getElementById('user-dob').value;
+      const errorEl = document.getElementById('onboarding-error');
+
+      if (!dobInput) {
+        errorEl.textContent = 'Please select your Date of Birth to anchor your timeline.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const birthDate = new Date(dobInput);
+      if (birthDate > new Date()) {
+        errorEl.textContent = 'Date of Birth cannot be in the future.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+
+      mementoState.profile.fullName = document.getElementById('user-name').value.trim() || 'Traveller';
+      mementoState.profile.dob = dobInput;
+      mementoState.profile.birthTime = document.getElementById('user-tob').value || '00:00';
+      mementoState.profile.timeZone = document.getElementById('user-tz').value;
+
+      document.getElementById('screen-onboarding').classList.add('hidden');
+      document.getElementById('screen-scanner').classList.remove('hidden');
+      document.getElementById('step-indicator').textContent = 'PHASE 02 // DUAL-PALM BIOMETRY';
+
+      initCameraStream();
+    }
+
+    // Initialize Webcam or Automatic Biometric Palm Simulation Viewfinder
+    async function initCameraStream() {
+      const videoEl = document.getElementById('camera-video');
+      const simCanvas = document.getElementById('sim-viewfinder-canvas');
+      const hudStatus = document.getElementById('hud-status');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        mementoState.scanner.stream = stream;
+        mementoState.scanner.usingSimulation = false;
+        videoEl.srcObject = stream;
+        videoEl.classList.remove('hidden');
+        simCanvas.classList.add('hidden');
+        hudStatus.textContent = 'OPTICAL CAMERA: ONLINE';
+      } catch (err) {
+        // Automatic Biometric Simulation Fallback when inside sandboxed iframe or no webcam
+        mementoState.scanner.usingSimulation = true;
+        videoEl.classList.add('hidden');
+        simCanvas.classList.remove('hidden');
+        hudStatus.textContent = 'BIOMETRIC SIMULATOR: ACTIVE';
+        startSimulatedPalmFeed();
+      }
+    }
+
+    function startSimulatedPalmFeed() {
+      const canvas = document.getElementById('sim-viewfinder-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 640;
+      canvas.height = 480;
+
+      let tick = 0;
+      if (mementoState.scanner.simAnimationId) cancelAnimationFrame(mementoState.scanner.simAnimationId);
+
+      function renderSimFrame() {
+        tick += 0.03;
+        ctx.fillStyle = '#09090d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Subtle biometric grid
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.06)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 32) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 32) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        // Draw stylized glowing palm lines based on current hand
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        if (mementoState.scanner.currentHand === 'RIGHT') {
+          ctx.scale(-1, 1);
+        }
+
+        // Warm skin-tone aura glow
+        const grad = ctx.createRadialGradient(0, 10, 10, 0, 10, 170);
+        grad.addColorStop(0, 'rgba(212, 163, 115, 0.22)');
+        grad.addColorStop(1, 'rgba(7, 7, 9, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 10, 170, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Jeevan Rekha (Life Line) curve
+        ctx.strokeStyle = `rgba(212, 175, 55, ${0.65 + Math.sin(tick) * 0.2})`;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(-42, -18);
+        ctx.quadraticCurveTo(18, 20, 8, 125);
+        ctx.stroke();
+
+        // Mangal Rekha (Sister Line)
+        ctx.strokeStyle = 'rgba(243, 229, 171, 0.45)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-48, -4);
+        ctx.quadraticCurveTo(4, 28, -4, 105);
+        ctx.stroke();
+
+        // Mastishka Rekha (Head Line) & Hridaya Rekha (Heart Line)
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-40, -22);
+        ctx.quadraticCurveTo(10, -10, 58, -18);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(62, -38);
+        ctx.quadraticCurveTo(10, -30, -25, -48);
+        ctx.stroke();
+
+        ctx.restore();
+        mementoState.scanner.simAnimationId = requestAnimationFrame(renderSimFrame);
+      }
+
+      renderSimFrame();
+    }
+
+    function stopCameraStream() {
+      if (mementoState.scanner.stream) {
+        mementoState.scanner.stream.getTracks().forEach(track => track.stop());
+        mementoState.scanner.stream = null;
+      }
+      if (mementoState.scanner.simAnimationId) {
+        cancelAnimationFrame(mementoState.scanner.simAnimationId);
+        mementoState.scanner.simAnimationId = null;
+      }
+    }
+
+    function returnToOnboarding() {
+      stopCameraStream();
+      document.getElementById('screen-scanner').classList.add('hidden');
+      document.getElementById('screen-onboarding').classList.remove('hidden');
+      document.getElementById('step-indicator').textContent = 'PHASE 01 // INITIATION';
+    }
+
+    function returnToOnboardingFromDash() {
+      if (mementoState.countdownInterval) clearInterval(mementoState.countdownInterval);
+      document.getElementById('screen-dashboard').classList.add('hidden');
+      document.getElementById('screen-onboarding').classList.remove('hidden');
+      document.getElementById('step-indicator').textContent = 'PHASE 01 // INITIATION';
+    }
+
+    // Capture Left Palm -> Right Palm -> Trigger Gemini Vision Analysis
+    function captureCurrentPalm() {
+      if (mementoState.scanner.currentHand === 'COMPLETE') {
+        analyzePalmsWithGemini();
+        return;
+      }
+
+      const videoEl = document.getElementById('camera-video');
+      const simCanvas = document.getElementById('sim-viewfinder-canvas');
+      const canvas = document.getElementById('capture-canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Shutter flash animation
+      const flashEl = document.getElementById('camera-flash');
+      flashEl.classList.remove('flash-active');
+      void flashEl.offsetWidth;
+      flashEl.classList.add('flash-active');
+
+      canvas.width = 640;
+      canvas.height = 480;
+
+      if (!mementoState.scanner.usingSimulation && videoEl.readyState >= 2) {
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.drawImage(simCanvas, 0, 0, canvas.width, canvas.height);
+      }
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      saveCapturedPalm(dataUrl);
+    }
+
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        saveCapturedPalm(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveCapturedPalm(dataUrl) {
+      const btnCapture = document.getElementById('btn-capture-palm');
+      const svgGuide = document.getElementById('palm-svg-guide');
+
+      if (mementoState.scanner.currentHand === 'LEFT') {
+        mementoState.scanner.leftPalmBase64 = dataUrl;
+
+        const thumbLeft = document.getElementById('thumb-left');
+        thumbLeft.src = dataUrl;
+        thumbLeft.classList.remove('hidden');
+        document.getElementById('thumb-left-placeholder').classList.add('hidden');
+        document.getElementById('status-left').textContent = 'Captured ✓';
+        document.getElementById('status-left').className = 'text-[11px] font-mono text-emerald-400';
+
+        // Advance to Right Hand
+        mementoState.scanner.currentHand = 'RIGHT';
+        document.getElementById('scan-badge').textContent = 'STEP 2 OF 2';
+        document.getElementById('scan-title').textContent = 'PLACE RIGHT PALM IN FRAME';
+        document.getElementById('scan-subtitle').textContent = 'Now align your Right Palm to evaluate active karma, Mangal Rekha & longevity.';
+        document.getElementById('hud-hand-label').textContent = 'TARGET: RIGHT_PALM (ACTIVE TIMELINE)';
+        btnCapture.textContent = 'SCAN RIGHT PALM';
+
+        // Mirror SVG guide for Right Hand
+        svgGuide.style.transform = 'scaleX(-1)';
+        document.getElementById('status-right').textContent = 'Step 2: Ready';
+        document.getElementById('status-right').className = 'text-[11px] font-mono text-amber-400';
+        showToast('Left Palm captured. Now scan your Right Palm.');
+
+      } else if (mementoState.scanner.currentHand === 'RIGHT') {
+        mementoState.scanner.rightPalmBase64 = dataUrl;
+
+        const thumbRight = document.getElementById('thumb-right');
+        thumbRight.src = dataUrl;
+        thumbRight.classList.remove('hidden');
+        document.getElementById('thumb-right-placeholder').classList.add('hidden');
+        document.getElementById('status-right').textContent = 'Captured ✓';
+        document.getElementById('status-right').className = 'text-[11px] font-mono text-emerald-400';
+
+        mementoState.scanner.currentHand = 'COMPLETE';
+        document.getElementById('scan-badge').textContent = 'BIOMETRY COMPLETE';
+        document.getElementById('scan-title').textContent = 'DUAL-PALM IMPRINT LOCKED';
+        document.getElementById('scan-subtitle').textContent = 'Both palms captured. Click below to run Samudrik Shastra Gemini Vision analysis.';
+        document.getElementById('hud-status').textContent = 'READY FOR GEMINI VISION API';
+
+        btnCapture.textContent = 'ANALYZE PALMS & REVEAL TIMELINE →';
+        showToast('Both palms locked! Click Analyze Palms to compute your timeline.');
+      }
+    }
+
+    function resetPalmScans() {
+      mementoState.scanner.currentHand = 'LEFT';
+      mementoState.scanner.leftPalmBase64 = null;
+      mementoState.scanner.rightPalmBase64 = null;
+
+      document.getElementById('thumb-left').classList.add('hidden');
+      document.getElementById('thumb-left-placeholder').classList.remove('hidden');
+      document.getElementById('status-left').textContent = 'Step 1: Ready';
+      document.getElementById('status-left').className = 'text-[11px] font-mono text-amber-400';
+
+      document.getElementById('thumb-right').classList.add('hidden');
+      document.getElementById('thumb-right-placeholder').classList.remove('hidden');
+      document.getElementById('status-right').textContent = 'Step 2: Waiting';
+      document.getElementById('status-right').className = 'text-[11px] font-mono text-zinc-500';
+
+      document.getElementById('scan-badge').textContent = 'STEP 1 OF 2';
+      document.getElementById('scan-title').textContent = 'PLACE LEFT PALM IN FRAME';
+      document.getElementById('scan-subtitle').textContent = 'Align your Jeevan Rekha (Life Line) and Shukra Parvat (Venus Mount) inside the golden guide.';
+      document.getElementById('hud-hand-label').textContent = 'TARGET: LEFT_PALM (BIRTH POTENTIAL)';
+      document.getElementById('palm-svg-guide').style.transform = 'scaleX(1)';
+      document.getElementById('btn-capture-palm').textContent = 'SCAN LEFT PALM';
+    }
+
+    // =================================================================
+    // STEP 3: GEMINI VISION API CALL (SAMUDRIK SHASTRA PALM ANALYSIS)
+    // =================================================================
+    async function analyzePalmsWithGemini() {
+      const overlay = document.getElementById('ai-loading-overlay');
+      const stepText = document.getElementById('ai-loading-step');
+      overlay.classList.remove('hidden');
+
+      const leftBase64Raw = (mementoState.scanner.leftPalmBase64 || '').split(',')[1] || '';
+      const rightBase64Raw = (mementoState.scanner.rightPalmBase64 || '').split(',')[1] || '';
+
+      const activeKey = userCustomApiKey || apiKey;
+      // Primary endpoint uses gemini-2.5-flash (or gemini-3-flash-preview fallback)
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-3-flash-preview'];
+
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: SAMUDRIK_SYSTEM_PROMPT }]
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: 'Analyze Image 1 (Left Hand) and Image 2 (Right Hand) according to traditional Hindu Palmistry (Samudrik Shastra) and return the JSON with estimated_lifespan (between 65 and 92) and reading_summary.' },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: leftBase64Raw
+                }
+              },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: rightBase64Raw
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              estimated_lifespan: { type: 'INTEGER' },
+              reading_summary: { type: 'STRING' }
+            },
+            required: ['estimated_lifespan', 'reading_summary']
+          }
+        }
+      };
+
+      let parsedResult = null;
+
+      for (const modelName of modelsToTry) {
+        if (parsedResult) break;
+        stepText.textContent = `Querying ${modelName} Vision Engine with Dual-Palm Base64 Tensors...`;
+        parsedResult = await callGeminiWithBackoff(modelName, activeKey, payload);
+      }
+
+      if (parsedResult && typeof parsedResult.estimated_lifespan === 'number') {
+        const clampedAge = Math.min(92, Math.max(65, Math.round(parsedResult.estimated_lifespan)));
+        mementoState.destiny.estimatedLifespan = clampedAge;
+        mementoState.destiny.readingSummary = parsedResult.reading_summary || 'Deep, sweeping Jeevan Rekha curve with a generous Shukra Parvat arc and supportive Mangal Rekha alignment.';
+        mementoState.destiny.source = 'GEMINI VISION AI';
+        showToast(`Samudrik Vision Analysis Complete: ${clampedAge} Years Horizon`);
+      } else {
+        // Deterministic Samudrik Shastra fallback calculation from image signature + DOB so the app never breaks
+        const computedFallbackAge = computeSamudrikFallbackLifespan(leftBase64Raw, rightBase64Raw);
+        mementoState.destiny.estimatedLifespan = computedFallbackAge;
+        mementoState.destiny.readingSummary = `Both palms exhibit a wide Shukra Parvat (Venus Mount) arc and a continuous Jeevan Rekha extending toward the Manibandha wrist bracelets, reinforced by a subtle Mangal Rekha indicating strong vitality and resilience (${computedFallbackAge}-year horizon).`;
+        mementoState.destiny.source = 'SAMUDRIK BIOMETRIC ENGINE';
+        showToast(`Samudrik Palm Analysis Complete: ${computedFallbackAge} Years Horizon`);
+      }
+
+      overlay.classList.add('hidden');
+      stopCameraStream();
+
+      // Transition to Screen 3: Main Dashboard
+      document.getElementById('screen-scanner').classList.add('hidden');
+      document.getElementById('screen-dashboard').classList.remove('hidden');
+      document.getElementById('step-indicator').textContent = 'PHASE 03 // LIVE CHRONOMETER';
+
+      initDashboard();
+    }
+
+    async function callGeminiWithBackoff(modelName, key, payload) {
+      const delays = [800, 1600];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              const cleaned = rawText.replace(/```json|```/g, '').trim();
+              return JSON.parse(cleaned);
+            }
+          }
+        } catch (err) {
+          // Silent retry per guidelines
+        }
+        if (attempt < delays.length) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+        }
+      }
+      return null;
+    }
+
+    // Deterministic calculation between 72 and 88 based on captured palm image byte signature
+    function computeSamudrikFallbackLifespan(leftB64, rightB64) {
+      const combined = (leftB64.slice(0, 250) + rightB64.slice(0, 250));
+      let hash = 0;
+      for (let i = 0; i < combined.length; i++) {
+        hash = (hash * 31 + combined.charCodeAt(i)) % 100000;
+      }
+      return 72 + (hash % 17); // Returns a realistic lifespan between 72 and 88 years
+    }
+
+    function reopenScanner() {
+      if (mementoState.countdownInterval) {
+        clearInterval(mementoState.countdownInterval);
+      }
+      resetPalmScans();
+      document.getElementById('screen-dashboard').classList.add('hidden');
+      document.getElementById('screen-scanner').classList.remove('hidden');
+      document.getElementById('step-indicator').textContent = 'PHASE 02 // DUAL-PALM BIOMETRY';
+      initCameraStream();
+    }
+
+    // =================================================================
+    // SCREEN 3: MAIN DASHBOARD & CHRONOMETER ENGINE
+    // =================================================================
+    function initDashboard() {
+      const { fullName, dob, birthTime, timeZone } = mementoState.profile;
+      const { estimatedLifespan, readingSummary, source } = mementoState.destiny;
+
+      document.getElementById('dash-user-name').textContent = fullName;
+      document.getElementById('dash-lifespan-years').textContent = estimatedLifespan;
+      document.getElementById('dash-source-badge').textContent = source;
+      document.getElementById('dash-tz-badge').textContent = timeZone;
+      document.getElementById('dash-reading-summary').textContent = readingSummary;
+      document.getElementById('milestone-horizon-label').textContent = `MANIBANDHA (${estimatedLifespan}y)`;
+
+      if (mementoState.scanner.leftPalmBase64) {
+        document.getElementById('dash-palm-left').src = mementoState.scanner.leftPalmBase64;
+      }
+      if (mementoState.scanner.rightPalmBase64) {
+        document.getElementById('dash-palm-right').src = mementoState.scanner.rightPalmBase64;
+      }
+
+      const originDateObj = new Date(`${dob}T${birthTime || '00:00'}`);
+      const horizonDateObj = new Date(originDateObj);
+      horizonDateObj.setFullYear(originDateObj.getFullYear() + Number(estimatedLifespan));
+
+      document.getElementById('stat-origin-date').textContent = originDateObj.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      document.getElementById('stat-horizon-year').textContent = horizonDateObj.getFullYear();
+
+      // Start 1-second live chronometer loop
+      updateChronometerTick(originDateObj, horizonDateObj);
+      if (mementoState.countdownInterval) clearInterval(mementoState.countdownInterval);
+      mementoState.countdownInterval = setInterval(() => {
+        updateChronometerTick(originDateObj, horizonDateObj);
+      }, 1000);
+
+      renderMemoryVault();
+      renderBucketList();
+    }
+
+    function updateChronometerTick(originDateObj, horizonDateObj) {
+      const now = new Date();
+      const totalLifespanMs = horizonDateObj.getTime() - originDateObj.getTime();
+      const elapsedMs = Math.max(0, now.getTime() - originDateObj.getTime());
+      const remainingMs = Math.max(0, horizonDateObj.getTime() - now.getTime());
+
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const totalDaysLived = Math.floor(elapsedMs / msPerDay);
+      const estimatedDaysRemaining = Math.floor(remainingMs / msPerDay);
+
+      document.getElementById('stat-days-lived').textContent = totalDaysLived.toLocaleString('en-IN');
+      document.getElementById('stat-days-remaining').textContent = estimatedDaysRemaining.toLocaleString('en-IN');
+
+      // Exact Age Breakdown (Years, Months, Days)
+      let years = now.getFullYear() - originDateObj.getFullYear();
+      let months = now.getMonth() - originDateObj.getMonth();
+      let days = now.getDate() - originDateObj.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+      document.getElementById('stat-exact-age').textContent = `${years}y ${months}m ${days}d`;
+
+      // Percentage Elapsed & Remaining
+      const pctElapsed = Math.min(100, Math.max(0, (elapsedMs / totalLifespanMs) * 100));
+      const pctRemaining = Math.max(0, 100 - pctElapsed);
+
+      document.getElementById('stat-pct-elapsed').textContent = `${pctElapsed.toFixed(4)}%`;
+      document.getElementById('stat-pct-remaining').textContent = `${pctRemaining.toFixed(4)}%`;
+      document.getElementById('lifespan-progress-bar').style.width = `${pctElapsed}%`;
+
+      // Live Countdown Breakdown (Days, Hours, Minutes, Seconds)
+      const cdDays = Math.floor(remainingMs / msPerDay);
+      const cdHours = Math.floor((remainingMs % msPerDay) / (1000 * 60 * 60));
+      const cdMinutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+      const cdSeconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+      document.getElementById('cd-days').textContent = cdDays.toLocaleString('en-IN');
+      document.getElementById('cd-hours').textContent = String(cdHours).padStart(2, '0');
+      document.getElementById('cd-minutes').textContent = String(cdMinutes).padStart(2, '0');
+      document.getElementById('cd-seconds').textContent = String(cdSeconds).padStart(2, '0');
+    }
+
+    // =================================================================
+    // MEMORY VAULT (PHOTO UPLOAD & VOICE NOTE RECORDING)
+    // =================================================================
+    function previewSelectedPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        mementoState.mediaStaging.photoDataUrl = e.target.result;
+        document.getElementById('photo-label-text').textContent = 'PHOTO READY ✓';
+        updateAttachmentStatus();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function toggleVoiceRecording() {
+      const btnText = document.getElementById('record-btn-text');
+      const dot = document.getElementById('record-dot');
+
+      if (!mementoState.mediaStaging.isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const recorder = new MediaRecorder(stream);
+          mementoState.mediaStaging.audioChunks = [];
+
+          recorder.ondataavailable = event => {
+            if (event.data.size > 0) mementoState.mediaStaging.audioChunks.push(event.data);
+          };
+
+          recorder.onstop = () => {
+            const audioBlob = new Blob(mementoState.mediaStaging.audioChunks, { type: 'audio/webm' });
+            mementoState.mediaStaging.audioDataUrl = URL.createObjectURL(audioBlob);
+            stream.getTracks().forEach(t => t.stop());
+            updateAttachmentStatus();
+          };
+
+          recorder.start();
+          mementoState.mediaStaging.mediaRecorder = recorder;
+          mementoState.mediaStaging.isRecording = true;
+          btnText.textContent = 'STOP RECORDING';
+          dot.classList.add('animate-ping');
+        } catch (err) {
+          // Synthesize a gentle chime WAV audio memo if microphone permission is blocked in iframe
+          mementoState.mediaStaging.audioDataUrl = createSyntheticAudioMemoUrl();
+          btnText.textContent = 'VOICE NOTE READY ✓';
+          updateAttachmentStatus();
+          showToast('Microphone unavailable in preview; attached synthesized audio chime memo.');
+        }
+      } else {
+        mementoState.mediaStaging.mediaRecorder.stop();
+        mementoState.mediaStaging.isRecording = false;
+        btnText.textContent = 'VOICE NOTE READY ✓';
+        dot.classList.remove('animate-ping');
+      }
+    }
+
+    // Generates a short playable WAV audio chime when testing without microphone permissions
+    function createSyntheticAudioMemoUrl() {
+      const sampleRate = 22050;
+      const durationSeconds = 2;
+      const numSamples = sampleRate * durationSeconds;
+      const buffer = new ArrayBuffer(44 + numSamples * 2);
+      const view = new DataView(buffer);
+
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numSamples * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, numSamples * 2, true);
+
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const envelope = Math.exp(-t * 1.8);
+        const sample = Math.sin(2 * Math.PI * 432 * t) * envelope * 0.5;
+        view.setInt16(44 + i * 2, sample * 32767, true);
+      }
+
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    }
+
+    function updateAttachmentStatus() {
+      const statusEl = document.getElementById('attachment-status');
+      const parts = [];
+      if (mementoState.mediaStaging.photoDataUrl) parts.push('Photo attached');
+      if (mementoState.mediaStaging.audioDataUrl) parts.push('Voice note attached');
+
+      if (parts.length > 0) {
+        statusEl.textContent = `✓ ${parts.join(' + ')}`;
+        statusEl.classList.remove('hidden');
+      } else {
+        statusEl.classList.add('hidden');
+      }
+    }
+
+    function handleAddMemory(event) {
+      event.preventDefault();
+      const titleInput = document.getElementById('memory-title');
+      const noteInput = document.getElementById('memory-note');
+
+      const newMemory = {
+        id: Date.now(),
+        title: titleInput.value.trim(),
+        note: noteInput.value.trim(),
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+        photoUrl: mementoState.mediaStaging.photoDataUrl,
+        audioUrl: mementoState.mediaStaging.audioDataUrl
+      };
+
+      mementoState.memories.unshift(newMemory);
+      persistStorage();
+
+      titleInput.value = '';
+      noteInput.value = '';
+      document.getElementById('memory-photo-input').value = '';
+      mementoState.mediaStaging.photoDataUrl = null;
+      mementoState.mediaStaging.audioDataUrl = null;
+      document.getElementById('photo-label-text').textContent = 'ADD PHOTO';
+      document.getElementById('record-btn-text').textContent = 'RECORD VOICE NOTE';
+      updateAttachmentStatus();
+
+      renderMemoryVault();
+      showToast('Memory sealed in your Temporal Vault.');
+    }
+
+    function deleteMemory(id) {
+      mementoState.memories = mementoState.memories.filter(m => m.id !== id);
+      persistStorage();
+      renderMemoryVault();
+    }
+
+    function renderMemoryVault() {
+      const listEl = document.getElementById('memory-vault-list');
+      const countBadge = document.getElementById('memory-count-badge');
+      countBadge.textContent = `${mementoState.memories.length} ${mementoState.memories.length === 1 ? 'ARTIFACT' : 'ARTIFACTS'}`;
+
+      if (mementoState.memories.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 border border-dashed border-white/10 rounded-xl text-xs font-mono text-zinc-500">
+            VAULT EMPTY // RECORD YOUR FIRST MEMORY ABOVE
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = mementoState.memories.map(mem => `
+        <div class="bg-black/45 border border-white/10 rounded-xl p-4 space-y-3 transition hover:border-white/20">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-mono text-gold uppercase tracking-wider">${mem.date}</span>
+              <h3 class="text-sm font-medium text-white mt-0.5">${escapeHtml(mem.title)}</h3>
+            </div>
+            <button onclick="deleteMemory(${mem.id})" class="text-xs font-mono text-zinc-600 hover:text-red-400 transition" title="Remove">
+              ✕
+            </button>
+          </div>
+          ${mem.note ? `<p class="text-xs text-zinc-400 leading-relaxed">${escapeHtml(mem.note)}</p>` : ''}
+          ${mem.photoUrl ? `<img src="${mem.photoUrl}" alt="Memory" class="w-full max-h-56 object-cover rounded-lg border border-white/10" />` : ''}
+          ${mem.audioUrl ? `<audio controls src="${mem.audioUrl}" class="w-full h-9 mt-2"></audio>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // =================================================================
+    // BUCKET LIST LOGIC
+    // =================================================================
+    function handleAddBucketItem(event) {
+      event.preventDefault();
+      const inputEl = document.getElementById('bucket-input');
+      const title = inputEl.value.trim();
+      if (!title) return;
+
+      mementoState.bucketList.push({
+        id: Date.now(),
+        title,
+        completed: false
+      });
+
+      inputEl.value = '';
+      persistStorage();
+      renderBucketList();
+      showToast('New life goal added to your Bucket List.');
+    }
+
+    function toggleBucketItem(id) {
+      const item = mementoState.bucketList.find(b => b.id === id);
+      if (item) item.completed = !item.completed;
+      persistStorage();
+      renderBucketList();
+    }
+
+    function deleteBucketItem(id) {
+      mementoState.bucketList = mementoState.bucketList.filter(b => b.id !== id);
+      persistStorage();
+      renderBucketList();
+    }
+
+    function renderBucketList() {
+      const container = document.getElementById('bucket-list-container');
+      const badge = document.getElementById('bucket-progress-badge');
+      const miniBar = document.getElementById('bucket-mini-bar');
+
+      const total = mementoState.bucketList.length;
+      const done = mementoState.bucketList.filter(b => b.completed).length;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+      badge.textContent = `${done} / ${total} FULFILLED`;
+      miniBar.style.width = `${pct}%`;
+
+      if (total === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 border border-dashed border-white/10 rounded-xl text-xs font-mono text-zinc-500">
+            NO GOALS LISTED YET
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = mementoState.bucketList.map(item => `
+        <div class="flex items-center justify-between gap-3 bg-black/40 border ${item.completed ? 'border-gold/30 bg-gold/5' : 'border-white/10'} rounded-xl px-3.5 py-3 transition">
+          <label class="flex items-center space-x-3 cursor-pointer flex-grow">
+            <input
+              type="checkbox"
+              ${item.completed ? 'checked' : ''}
+              onchange="toggleBucketItem(${item.id})"
+              class="w-4 h-4 accent-amber-400 rounded cursor-pointer"
+            />
+            <span class="text-xs md:text-sm ${item.completed ? 'line-through text-zinc-500' : 'text-zinc-200'}">
+              ${escapeHtml(item.title)}
+            </span>
+          </label>
+          <button onclick="deleteBucketItem(${item.id})" class="text-xs font-mono text-zinc-600 hover:text-red-400 transition">
+            ✕
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+  </script>
+</body>
+</html>
